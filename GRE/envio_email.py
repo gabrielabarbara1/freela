@@ -9,7 +9,8 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 import datetime
 import sys
-from dotenv import load_dotenv  # Importar a biblioteca dotenv
+from dotenv import load_dotenv  
+import signal  # Importar o módulo signal
 
 # Carregar variáveis de ambiente do arquivo .env
 load_dotenv()
@@ -19,6 +20,12 @@ SCOPES = ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/a
 
 # Caminho do arquivo para armazenar os IDs dos arquivos já enviados
 SENT_FILES_PATH = "sent_files.json"
+
+class TimeoutException(Exception):
+    pass
+
+def timeout_handler(signum, frame):
+    raise TimeoutException
 
 def authenticate_service_account():
     creds_info = {
@@ -130,18 +137,21 @@ def monitor_folders(drive_service, folder_email_mapping):
                     save_sent_files(sent_file_ids)
 
             time.sleep(5)  # Pausa entre as verificações de arquivos
-        time.sleep(10)  # Pausa entre as verificações de subpastas
-
-    # Pausa de 1 min antes de encerrar
-    print("Aguardando 1 min antes de encerrar...")
-    time.sleep(1)  
+        time.sleep(5)  # Pausa entre as verificações de subpastas
 
 if __name__ == '__main__':
+    # Definir um limite de tempo de 20 minutos (1200segundos)
+    signal.signal(signal.SIGALRM, timeout_handler)
+    signal.alarm(1200)
+
     try:
         drive_service, sheets_service = authenticate_service_account()
         folder_email_mapping = get_folder_email_mapping(sheets_service)
         monitor_folders(drive_service, folder_email_mapping)
+    except TimeoutException:
+        print("Tempo limite de execução atingido. Encerrando o script.")
     except Exception as e:
         print(f"Erro: {e}")
     finally:
         print("Script finalizado.")
+        signal.alarm(0)  # Desativar o alarme
