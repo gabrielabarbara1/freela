@@ -122,13 +122,13 @@ def monitor_folders(drive_service, folder_email_mapping):
                 if added_today_files:
                     folder_name = get_folder_name_by_id(drive_service, folder_id)
                     folder_path = f"{folder_name} > {subfolder['name']}"
+                    folder_link = f"https://drive.google.com/drive/folders/{subfolder['id']}"
                     
                     for added_file in added_today_files:
                         if added_file['id'] not in sent_file_ids:
-                            file_link = f"https://drive.google.com/file/d/{added_file['id']}/view"
                             send_email(
                                 f"Arquivo adicionado a {folder_path}",
-                                f"O arquivo <strong>{added_file['name']}</strong> foi adicionado a {folder_path}.<br>Link: <a href='{file_link}'>{file_link}</a>",
+                                f"O arquivo <strong>{added_file['name']}</strong> foi adicionado a {folder_path}.<br>Link da pasta: <a href='{folder_link}'>{folder_link}</a>",
                                 email
                             )
                             sent_file_ids.add(added_file['id'])
